@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isTA() {
+      // Assumes a 'users' collection where TAs have a role field
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TA';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection (Roles & Basic Info)
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isTA();
+      allow write: if false; // Only backend Admin SDK can create users
+    }
+
+    // Courses Collection
+    match /courses/{courseId} {
+      // Anyone authenticated can read course details
+      allow read: if isAuthenticated();
+      allow write: if isTA();
+
+      // Sessions Subcollection
+      match /sessions/{date} {
+        // Students can read the session to see if it's active (for the 60s popup)
+        allow read: if isAuthenticated();
+        // Only TAs can start/stop sessions from the client
+        allow write: if isTA();
+
+        // Submissions Subcollection (CRITICAL FOR CONCURRENCY)
+        // Path: courses/{courseId}/sessions/{date}/submissions/{studentRollNo}
+        match /submissions/{studentRollNo} {
+          // Students can read their OWN submission to verify success
+          allow read: if isTA() || (isAuthenticated() && request.auth.token.email.matches('.*' + studentRollNo + '.*'));
+          
+          // NO DIRECT CLIENT WRITES FOR STUDENTS. 
+          // Must go through Next.js API for IP (103.233.171.35) & Hash validation.
+          allow create, update, delete: if isTA(); 
+        }
+      }
+    }
+    
+    // Dispute Queue
+    match /disputes/{disputeId} {
+      allow create: if isAuthenticated(); // Students can flag discrepancies
+      allow read, update, delete: if isTA(); // TAs manage the queue
+    }
+  }
+}

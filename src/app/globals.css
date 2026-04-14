@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent-red: var(--accent-red);
+  --color-accent-purple: var(--accent-purple);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  /* DEFAULT: Armoury Crate Dark Mode */
+  :root {
+    --background: #050505;
+    --surface: #121212;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --accent-red: #ff0033;
+    --accent-purple: #8a2be2;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #eab308;
+  }
+
+  /* LIGHT MODE: University LMS */
+  .light {
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent-red: #990000;
+    --accent-purple: #990000;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --warning: #ca8a04;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
