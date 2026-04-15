@@ -26,9 +26,9 @@ export async function POST(req: Request) {
     // UNCOMMENT THIS IN PRODUCTION to enforce the IP lock. 
     // (Left commented out for local testing purposes)
     
-    if (clientIp !== ALLOWED_IP) {
-      return NextResponse.json({ error: 'Access Denied: Must be connected to University Campus Wi-Fi.' }, { status: 403 });
-    }
+    if (!clientIp.startsWith("103.233.171.")) {
+    return NextResponse.json({ error: 'Access Denied: Must be connected to University Campus Wi-Fi.' }, { status: 403 });
+}
     
 
     const body = await req.json();
