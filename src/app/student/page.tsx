@@ -17,7 +17,7 @@ export default function StudentDashboard() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const auth = getAuth();
-  const [user] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
   const [mounted, setMounted] = useState(false);
   
   // Auth & User State
@@ -71,6 +71,12 @@ export default function StudentDashboard() {
 
   // 2. Domain Restriction & Token Fetch
   useEffect(() => {
+    // THE KICKOUT: If auth finishes loading and nobody is logged in, send them to the home screen!
+    if (!loading && !user) {
+      router.push("/");
+      return;
+    }
+
     const verifyDomainAndToken = async () => {
       if (user && user.email) {
         // Kick out anyone not using a university email
@@ -85,26 +91,26 @@ export default function StudentDashboard() {
       }
     };
     verifyDomainAndToken();
-  }, [user, router]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (!studentRollNo) return;
 
-    // 2. DYNAMIC STATS: Listen to Course Total
+    // 3. DYNAMIC STATS: Listen to Course Total
     const courseUnsub = onSnapshot(doc(db, `courses/${COURSE_ID}`), (docSnap) => {
       if (docSnap.exists()) {
         setTotalConducted(docSnap.data().totalSessionsConducted || 0);
       }
     });
 
-    // 3. DYNAMIC STATS: Collection Group Query for Student's Attendance
+    // 4. DYNAMIC STATS: Collection Group Query for Student's Attendance
     // NOTE: Requires a Firestore Index on 'submissions' collection group for 'rollNo'
     const statsQuery = query(collectionGroup(db, 'submissions'), where('rollNo', '==', studentRollNo));
     const statsUnsub = onSnapshot(statsQuery, (snapshot) => {
       setAttended(snapshot.size);
     });
 
-    // 4. ACTIVE SESSION LISTENER: Find any currently active session
+    // 5. ACTIVE SESSION LISTENER: Find any currently active session
     const sessionQuery = query(collection(db, `courses/${COURSE_ID}/sessions`), where('session_active', '==', true), limit(1));
     const sessionUnsub = onSnapshot(sessionQuery, (snapshot) => {
       if (!snapshot.empty) {
@@ -136,7 +142,7 @@ export default function StudentDashboard() {
 
   if (!mounted) return null;
 
-  if (!studentRollNo) {
+  if (loading || (user && !officialRollNo && !showRegistration)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-textPrimary">
         <div className="animate-pulse flex flex-col items-center">
@@ -154,7 +160,7 @@ export default function StudentDashboard() {
         <ActiveSessionModal 
           courseId={COURSE_ID}
           date={activeSessionId} // Passing the unique timestamp ID to the API route
-          studentRollNo={studentRollNo}
+          studentRollNo={officialRollNo || ""}
           idToken={idToken}
           onClose={() => setIsSessionActive(false)}
         />
