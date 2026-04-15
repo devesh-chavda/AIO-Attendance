@@ -34,9 +34,7 @@ export default function TADashboard() {
 
   // 2. THE VIP LIST (Replace with actual emails!)
   const AUTHORIZED_TAS = [
-    "devesh.c@ahduni.edu.in",
-    "jainil.something@ahduni.edu.in", 
-    "yash.something@ahduni.edu.in"
+    "devesh.c@ahduni.edu.in"
   ];
 
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
