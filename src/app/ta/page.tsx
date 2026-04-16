@@ -238,7 +238,7 @@ export default function TADashboard() {
       <header className="flex justify-between items-center mb-10 border-b border-textSecondary/20 pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">TA Dashboard</h1>
-          <p className="text-textSecondary font-mono mt-1">{COURSE_ID} - Section 1</p>
+          <p className="text-textSecondary font-mono mt-1">{COURSE_ID} - Section 2</p>
           {/* Dynamic Header Enhancement */}
           <p className="text-accentRed text-sm font-bold mt-2">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
