@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun, QrCode, Hash, Users, ShieldAlert, Download, UserPlus, Clock, CheckCircle } from "lucide-react";
+import { Moon, Sun, QrCode, Hash, Users, ShieldAlert, AlertOctagon, Download, UserPlus, Clock, CheckCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
@@ -52,7 +52,7 @@ export default function TADashboard() {
 
   useEffect(() => setMounted(true), []);
 
-  // 1. START SESSION (Batch Write: Create Session + Increment Course Total)
+  // 3. START SESSION (Batch Write: Create Session + Increment Course Total)
   const handleStartSession = async () => {
     const secret = Math.random().toString(36).substring(2, 15);
     const newSessionId = Date.now().toString(); // Unique ID fixes ghost data
@@ -85,7 +85,49 @@ export default function TADashboard() {
     }
   };
 
-  // 2. MASTER COUNTDOWN & TOTP SYNC
+  // 4. EMERGENCY STOP: Kill session, rollback total, and wipe submissions
+  const handleEmergencyStop = async () => {
+    const confirmed = window.confirm("🚨 EMERGENCY ABORT: Are you sure? This will kill the session, rollback the count, and DELETE any attendances just marked.");
+    if (!confirmed || !activeSessionId) return;
+
+    try {
+      const batch = writeBatch(db);
+
+      // --- SEARCH AND DESTROY SUBMISSIONS ---
+      // Find all students who managed to submit before you hit the stop button
+      const submissionsRef = collection(db, `courses/${COURSE_ID}/sessions/${activeSessionId}/submissions`);
+      const submissionsSnapshot = await getDocs(submissionsRef);
+      
+      // Add every single submission to the batch to be deleted
+      submissionsSnapshot.forEach((submissionDoc) => {
+        batch.delete(submissionDoc.ref);
+      });
+
+      // Immediately deactivate the session so no one else can submit
+      const sessionRef = doc(db, `courses/${COURSE_ID}/sessions/${activeSessionId}`);
+      batch.update(sessionRef, { session_active: false });
+
+      // Rollback the Master Course Total (-1)
+      const courseRef = doc(db, `courses/${COURSE_ID}`);
+      batch.update(courseRef, {
+        totalSessionsConducted: increment(-1)
+      });
+
+      // Execute the nuke (Deletes submissions, closes session, and rolls back total instantly)
+      await batch.commit();
+
+      // Reset the TA UI
+      setIsSessionActive(false);
+      setTimeLeft(0);
+      setActiveSessionId("");
+      
+    } catch (error) {
+      console.error("Emergency Stop Failed:", error);
+      alert("Failed to abort session. Check network connection.");
+    }
+  };
+
+  // 5. MASTER COUNTDOWN & TOTP SYNC
   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
     let otpInterval: NodeJS.Timeout;
@@ -121,7 +163,7 @@ export default function TADashboard() {
     }
   }, [isSessionActive, sessionSecret, activeSessionId]);
 
-  // 3. LIVE REALITY CHECK (Listens to current active session)
+  // 6. LIVE REALITY CHECK (Listens to current active session)
   useEffect(() => {
     if (!isSessionActive || !activeSessionId) return;
 
@@ -139,7 +181,7 @@ export default function TADashboard() {
     return () => unsubscribe();
   }, [isSessionActive, activeSessionId]);
 
-  // 4. MANUAL OVERRIDE (Batch Write: Submission + Permanent Audit Log)
+  // 7. MANUAL OVERRIDE (Batch Write: Submission + Permanent Audit Log)
   const handleManualOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualRollNo.trim() || !activeSessionId) return;
@@ -176,7 +218,7 @@ export default function TADashboard() {
     }
   };
 
-  // 5. MASTER CSV EXPORT (Traverses entire DB tree)
+  // 8. MASTER CSV EXPORT (Traverses entire DB tree)
   const handleMasterExportCSV = async () => {
     setIsExporting(true);
     try {
@@ -208,7 +250,7 @@ export default function TADashboard() {
     }
     setIsExporting(false);
   };
-// 3. THE BOUNCER (Locks the page if not on the VIP list)
+// 9. THE BOUNCER (Locks the page if not on the VIP list)
   if (!loading && (!user || !AUTHORIZED_TAS.includes(user.email || ""))) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -282,6 +324,16 @@ export default function TADashboard() {
                   <div className="w-64 h-1 bg-background mt-8 rounded-full overflow-hidden">
                     <div className="h-full bg-accentRed transition-all duration-1000 ease-linear" style={{ width: `${((timeLeft % 10) / 10) * 100}%` }} />
                   </div>
+                </div>
+                {/* THE NEW EMERGENCY STOP BUTTON */}
+                <div className="mt-8 flex justify-center w-full">
+                  <button
+                    onClick={handleEmergencyStop}
+                    className="flex items-center gap-2 px-8 py-3 bg-danger/10 text-danger border border-danger/30 rounded-xl font-bold tracking-widest hover:bg-danger hover:text-white transition-all active:scale-95 shadow-sm"
+                  >
+                    <AlertOctagon className="w-5 h-5" />
+                    EMERGENCY STOP
+                  </button>
                 </div>
               </div>
             )}
