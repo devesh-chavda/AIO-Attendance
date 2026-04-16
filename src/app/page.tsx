@@ -93,7 +93,7 @@ export default function LoginPage() {
             <div className="w-16 h-16 bg-background border-2 border-accentRed rounded-full flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(255,0,51,0.2)]">
               <ShieldCheck className="w-8 h-8 text-accentRed" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Ahmedabad University</h1>
+            <h1 className="text-2xl font-bold tracking-tight">All In One</h1>
             <p className="text-textSecondary text-sm mt-2 uppercase tracking-widest">Secure Attendance Portal</p>
           </div>
 
