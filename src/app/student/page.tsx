@@ -179,7 +179,7 @@ export default function StudentDashboard() {
       <main className="max-w-4xl mx-auto space-y-8">
         <div className="bg-surface border-l-4 border-accentRed p-6 rounded-r-lg shadow-md">
           <h2 className="text-2xl font-bold">{COURSE_ID} - Object Oriented Programming</h2>
-          <p className="text-textSecondary">Section 2 • TA: Shashwat.G</p>
+          <p className="text-textSecondary">Section 2 • TA: Alan Turing</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
